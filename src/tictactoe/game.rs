@@ -4,7 +4,6 @@ extern crate termion;
 use core::cmp::PartialEq;
 use std::io::Write;
 
-
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 pub enum Direction {
@@ -21,6 +20,7 @@ pub enum Player {
 }
 
 impl Player {
+    /// Get the symbol of the player.
     pub fn get_symbol(&self) -> char {
         match self {
             Player::A(symbol) => *symbol,
@@ -38,6 +38,7 @@ pub struct Game {
 }
 
 impl Game {
+    /// Create a new game.
     pub fn new() -> Game {
         let board: Vec<char> = (1..10)
             .map(|x| x.to_string().parse::<char>().unwrap())
@@ -55,6 +56,7 @@ impl Game {
         }
     }
 
+    /// Print the current state of the game.
     pub fn draw(self: &Game) {
         // let symbols = vec!['╬', '═', '╠', '╦', '╩', '╔', '╚', '╝', '╗', '║', '╣'];
 
@@ -83,15 +85,20 @@ impl Game {
         println!("╚═══╩═══╩═══╝\r");
     }
 
-    pub fn draw_cell(&self, player: &char, highlights: bool) {
+    /// Print the given symbol in the current color.
+    ///
+    /// If the `highlights` parameter is true, the cell will be highlighted in yellow.
+    ///
+    /// If the symbol is the player's symbol, the cell will be colored in blue or red (depending on the player).
+    pub fn draw_cell(&self, symb: &char, highlights: bool) {
         let mut stdout = StandardStream::stdout(ColorChoice::Always);
 
         let mut color = Some(Color::Rgb(128, 128, 128));
         let bg_color = Some(Color::Yellow);
 
-        if player == &self.player1.get_symbol() {
+        if symb == &self.player1.get_symbol() {
             color = Some(Color::Blue);
-        } else if player == &self.player2.get_symbol() {
+        } else if symb == &self.player2.get_symbol() {
             color = Some(Color::Red);
         }
 
@@ -103,22 +110,26 @@ impl Game {
 
         stdout.set_color(&color_spec).unwrap();
 
-        write!(&mut stdout, "{}", player).unwrap();
+        write!(&mut stdout, "{}", symb).unwrap();
         stdout.reset().unwrap();
     }
 
+    /// Get the cell at the given index.
     pub fn get_cell(&self, index: usize) -> char {
         self.board[index]
     }
 
+    /// Set the cell at the given index to the given symbol.
     pub fn set_cell(&mut self, index: usize, symb: &char) {
         self.board[index] = *symb;
     }
 
+    /// Switch the current player.
     pub fn switch_player(&mut self) {
         self.current_player = !self.current_player;
     }
 
+    /// Get the current player.
     pub fn current_player(&self) -> &Player {
         if self.current_player {
             &self.player1
@@ -127,6 +138,7 @@ impl Game {
         }
     }
 
+    /// Move the cursor in the given direction, if possible.
     pub fn move_cursor(&mut self, direction: &Direction) {
         match direction {
             Direction::Up => {
@@ -156,27 +168,37 @@ impl Game {
         }
     }
 
+    /// Check if the current player has won.
     pub fn check(&self) -> bool {
-
+        // Get the symbol of the current player.
         let symb = self.current_player().get_symbol();
 
         for i in 0..3 {
             let first_cell = i * 3;
 
-            if self.get_cell(first_cell) == symb && self.get_cell(first_cell + 1) == symb && self.get_cell(first_cell + 2) == symb {
-                return true;
-            }
-
-            if self.get_cell(i) == symb && self.get_cell(i + 3) == symb && self.get_cell(i + 6) == symb {
+            // Check if the current player has won horizontally
+            if self.get_cell(first_cell) == symb
+                && self.get_cell(first_cell + 1) == symb
+                && self.get_cell(first_cell + 2) == symb
+            {
                 return true;
             }
             
+            // Check if the current player has won vertically
+            if self.get_cell(i) == symb
+                && self.get_cell(i + 3) == symb
+                && self.get_cell(i + 6) == symb
+            {
+                return true;
+            }
         }
 
+        // Check if the current player has won diagonally (top-left to bottom-right)
         if self.get_cell(0) == symb && self.get_cell(4) == symb && self.get_cell(8) == symb {
             return true;
         }
 
+        // Check if the current player has won diagonally (top-right to bottom-left)
         if self.get_cell(2) == symb && self.get_cell(4) == symb && self.get_cell(6) == symb {
             return true;
         }
@@ -184,7 +206,10 @@ impl Game {
         false
     }
 
+    /// Check if the board is full.
     pub fn is_full(&self) -> bool {
-        self.board.iter().all(|x| x == &self.player1.get_symbol() || x == &self.player2.get_symbol())
+        self.board
+            .iter()
+            .all(|x| x == &self.player1.get_symbol() || x == &self.player2.get_symbol())
     }
 }
